@@ -9,9 +9,9 @@ use actix_web::{
 
 use futures_util::future::LocalBoxFuture;
 
-pub struct BlockOpenai;
+pub struct BlockAi;
 
-impl<S, B> Transform<S, ServiceRequest> for BlockOpenai
+impl<S, B> Transform<S, ServiceRequest> for BlockAi
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
     S::Future: 'static,
@@ -20,18 +20,18 @@ where
     type Response = ServiceResponse<EitherBody<B>>;
     type Error = Error;
     type InitError = ();
-    type Transform = BlockOpenaiMiddleware<S>;
+    type Transform = BlockAiMiddleware<S>;
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        ready(Ok(BlockOpenaiMiddleware { service }))
+        ready(Ok(BlockAiMiddleware { service }))
     }
 }
-pub struct BlockOpenaiMiddleware<S> {
+pub struct BlockAiMiddleware<S> {
     service: S,
 }
 
-impl<S, B> Service<ServiceRequest> for BlockOpenaiMiddleware<S>
+impl<S, B> Service<ServiceRequest> for BlockAiMiddleware<S>
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
     S::Future: 'static,
@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn valid_middleware() {
         let app = App::new()
-            .wrap(BlockOpenai)
+            .wrap(BlockAi)
             .route("/", web::get().to(|| async { "Hello, middleware!" }));
     }
 }
