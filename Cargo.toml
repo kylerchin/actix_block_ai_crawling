@@ -1,5 +1,5 @@
 [package]
-name = "block_openai_crawling"
+name = "block_ai_crawling"
 version = "0.1.0"
 edition = "2021"
 
