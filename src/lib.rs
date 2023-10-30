@@ -1,24 +1,22 @@
-use std::{future::{ready, Ready, Future}, pin::Pin};
+use std::future::{ready, Ready};
 
 use actix_web::{
-    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    web, Error,
-    App
+    body::EitherBody,
+    dev::{self, Service, ServiceRequest, ServiceResponse, Transform},
+    http, Error, HttpResponse,
 };
-use actix_web::HttpResponse;
 
+use futures_util::future::LocalBoxFuture;
 
 pub struct BlockOpenai;
 
-// `S` - type of the next service
-// `B` - type of response's body
 impl<S, B> Transform<S, ServiceRequest> for BlockOpenai
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
     S::Future: 'static,
     B: 'static,
 {
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse<EitherBody<B>>;
     type Error = Error;
     type InitError = ();
     type Transform = BlockOpenaiMiddleware<S>;
@@ -28,61 +26,45 @@ where
         ready(Ok(BlockOpenaiMiddleware { service }))
     }
 }
-
 pub struct BlockOpenaiMiddleware<S> {
-    /// The next service to call
     service: S,
 }
 
-// This future doesn't have the requirement of being `Send`.
-// See: futures_util::future::LocalBoxFuture
-type LocalBoxFuture<T> = Pin<Box<dyn Future<Output = T> + 'static>>;
-
-// `S`: type of the wrapped service
-// `B`: type of the body - try to be generic over the body where possible
 impl<S, B> Service<ServiceRequest> for BlockOpenaiMiddleware<S>
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
     S::Future: 'static,
     B: 'static,
 {
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse<EitherBody<B>>;
     type Error = Error;
-    type Future = LocalBoxFuture<Result<Self::Response, Self::Error>>;
+    type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
 
-    // This service is ready when its next service is ready
-    forward_ready!(service);
+    dev::forward_ready!(service);
 
-    fn call(&self, req: ServiceRequest) -> Self::Future {
-        println!("Hi from start. You requested: {}", req.path());
+    fn call(&self, request: ServiceRequest) -> Self::Future {
+        // Change this to see the change in outcome in the browser.
+        // Usually this boolean would be acquired from a password check or other auth verification.
+        let is_logged_in = false;
 
-        // A more complex middleware, could return an error or an early response here.
-        let user_agent: Option<&str> = match req
-        .request()
-        .headers()
-        .get(actix_web::http::header::USER_AGENT) {
-            Some(ua) => Some(ua.to_str().unwrap()),
-            None => None,
-        }.clone();
+        // Don't forward to `/login` if we are already on `/login`.
+        if !is_logged_in && request.path() != "/login" {
+            let (request, _pl) = request.into_parts();
 
-        //get ip address
-        let ip_address = req.peer_addr();
+            let response = HttpResponse::Found()
+                .insert_header((http::header::LOCATION, "/login"))
+                .finish()
+                // constructed responses map to "right" body
+                .map_into_right_body();
 
-        if user_agent == Some("GPTBot") {
-            println!("GPTBot detected. Blocking request.");
-            return Box::pin(async move {
-                Ok(req.into_response(HttpResponse::Forbidden().finish().into_body()))
-            });
+            return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
         }
- 
-        let fut = self.service.call(req);
+
+        let res = self.service.call(request);
 
         Box::pin(async move {
-
-            let res = fut.await?;
-
-            println!("Hi from response");
-            Ok(res)
+            // forwarded responses map to "left" body
+            res.await.map(ServiceResponse::map_into_left_body)
         })
     }
 }
