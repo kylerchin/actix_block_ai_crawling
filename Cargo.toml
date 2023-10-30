@@ -1,6 +1,6 @@
 [package]
 name = "actix_block_ai_crawling"
-license = "AGPL"
+license = "AGPL-3.0"
 description = "Actix Middleware that blocks Generative AI crawlers"
 version = "0.1.0"
 edition = "2021"
