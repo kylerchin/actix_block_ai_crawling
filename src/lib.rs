@@ -44,16 +44,17 @@ where
     dev::forward_ready!(service);
 
     fn call(&self, request: ServiceRequest) -> Self::Future {
-
-        let blocked_user_agents = ["ChatGPT-User","GPTBot","CCBot","Google-Extended"];
+        let blocked_user_agents = ["ChatGPT-User", "GPTBot", "CCBot", "Google-Extended"];
 
         let user_agent: Option<&str> = match request
-        .request()
-        .headers()
-        .get(actix_web::http::header::USER_AGENT) {
+            .request()
+            .headers()
+            .get(actix_web::http::header::USER_AGENT)
+        {
             Some(ua) => Some(ua.to_str().unwrap()),
             None => None,
-        }.clone();
+        }
+        .clone();
 
         if user_agent.is_some() {
             let user_agent = user_agent.unwrap();
@@ -61,12 +62,12 @@ where
             if blocked_user_agents.contains(&user_agent) {
                 let (request, _pl) = request.into_parts();
 
-            let response = HttpResponse::Forbidden()
-                .finish()
-                // constructed responses map to "right" body
-                .map_into_right_body();
+                let response = HttpResponse::Forbidden()
+                    .finish()
+                    // constructed responses map to "right" body
+                    .map_into_right_body();
 
-            return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
+                return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
             }
         }
 
@@ -81,16 +82,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use actix_web::App;
-    use actix_web::web;
     use super::*;
-
+    use actix_web::web;
+    use actix_web::App;
 
     #[test]
     fn valid_middleware() {
-        
-let app = App::new()
-.wrap(BlockOpenai)
-.route("/", web::get().to(|| async { "Hello, middleware!" }));
+        let app = App::new()
+            .wrap(BlockOpenai)
+            .route("/", web::get().to(|| async { "Hello, middleware!" }));
     }
 }
