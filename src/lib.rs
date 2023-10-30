@@ -45,8 +45,9 @@ where
     fn call(&self, request: ServiceRequest) -> Self::Future {
         // Change this to see the change in outcome in the browser.
         // Usually this boolean would be acquired from a password check or other auth verification.
-        let is_logged_in = false;
+        //let is_logged_in = false;
 
+        /* 
         // Don't forward to `/login` if we are already on `/login`.
         if !is_logged_in && request.path() != "/login" {
             let (request, _pl) = request.into_parts();
@@ -58,7 +59,9 @@ where
                 .map_into_right_body();
 
             return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
-        }
+        }*/
+
+        
 
         let res = self.service.call(request);
 
@@ -71,6 +74,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use actix_web::App;
+    use actix_web::web;
     use super::*;
 
 
