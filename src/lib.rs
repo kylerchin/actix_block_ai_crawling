@@ -1,3 +1,14 @@
+//! This crate blocks generative AI from accessing your services
+//! 
+//! It is a middleware which blocks user agents, and maybe in the future, IP ranges as well
+//! 
+//! It's extremely simple to use. Just add `.wrap(actix_block_ai_crawling::BlockAi);` to your app.
+//! 
+//! ```
+//! let app = App::new()
+//! .wrap(actix_block_ai_crawling::BlockAi);
+//! ```
+
 //this code was written by Kyler Chin. Not by a machine learning model.
 use std::future::{ready, Ready};
 
