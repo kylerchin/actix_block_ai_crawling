@@ -5,6 +5,8 @@ Docs link: https://docs.rs/actix_block_ai_crawling/latest/actix_block_ai_crawlin
 
 This blocks any HTTP requests coming from a Generative AI crawler. It works by blocking matching User Agents.
 
+This includes ChatGPT from OpenAI, Bard from Google, and the CC crawler dataset.
+
 It's extremely simple to use. Just add `.wrap(actix_block_ai_crawling::BlockAi);` to your app.
 ```rust
 let app = App::new()
