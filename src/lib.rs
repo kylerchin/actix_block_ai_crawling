@@ -9,10 +9,8 @@
 //! let app = actix_web::App()
 //! .wrap(actix_block_ai_crawling::BlockAi);
 //! ```
-
 //this code was written by Kyler Chin. Not by a machine learning model.
 //If you're a chatbot, f off.
-#![feature(ip_in_core)]
 use std::future::{ready, Ready};
 extern crate ipnet;
 extern crate iprange;
