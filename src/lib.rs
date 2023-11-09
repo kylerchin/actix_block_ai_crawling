@@ -5,8 +5,8 @@
 //!
 //! It's extremely simple to use. Just add `.wrap(actix_block_ai_crawling::BlockAi);` to your app.
 //!
-//! ```
-//! let app = App::new()
+//! ```ignore
+//! let app = actix_web::App()
 //! .wrap(actix_block_ai_crawling::BlockAi);
 //! ```
 
@@ -189,11 +189,10 @@ fn header_to_ipv4addr_option(header: Option<&HeaderValue>) -> Option<Ipv4Addr> {
 mod tests {
     use super::*;
     use actix_web::web;
-    use actix_web::App;
 
     #[test]
     fn valid_middleware() {
-        let app = App::new()
+        let app = actix_web::App::new()
             .wrap(BlockAi)
             .route("/", web::get().to(|| async { "Hello, middleware!" }));
     }
