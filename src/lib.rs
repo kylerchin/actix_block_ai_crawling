@@ -25,8 +25,10 @@ use std::str::FromStr;
 use actix_web::{
     body::EitherBody,
     dev::{self, Service, ServiceRequest, ServiceResponse, Transform},
-    http, Error, HttpResponse,
+    http, Error, HttpResponse
 };
+
+use actix_web::http::header::HeaderValue;
 
 use futures_util::future::LocalBoxFuture;
 
@@ -118,23 +120,25 @@ where
         .request()
         .headers().contains_key("Forwarded");
 
-        let ip_address: Option<&Ipv4Addr> = match has_forwarded || has_forwarded_for {
+        let ip_address: Option<Ipv4Addr> = match has_forwarded || has_forwarded_for {
             true => match has_forwarded_for {
-                true => Some(
-                    &core::net::Ipv4Addr::from_str(request
+                true => header_to_ipv4addr_option(request
+                    .request()
+                    .headers().get("X-Forwarded-For")),
+                
+                /*Some(
+                    core::net::Ipv4Addr::from_str(request
                     .request()
                     .headers().get("X-Forwarded-For").unwrap().to_str().unwrap()).unwrap()
-                ),
-                false =>  Some(
-                    &core::net::Ipv4Addr::from_str(request
+                ) */
+                false => header_to_ipv4addr_option(request
                     .request()
-                    .headers().get("Fowarded").unwrap().to_str().unwrap()).unwrap()
-                ),
+                    .headers().get("Fowarded")),
             },
             false => match request.peer_addr() {
                 Some(peer_addr) => {
                     match peer_addr {
-                        std::net::SocketAddr::V4(x) => Some(&x.ip()),
+                        std::net::SocketAddr::V4(x) => Some(*x.ip()),
                         _ => None
                     }
                 },
@@ -145,7 +149,16 @@ where
         if ip_address.is_some() {
             let ip_address = ip_address.unwrap();
 
+            if chat_gpt_ip_ranges.contains(&ip_address) {
+                let (request, _pl) = request.into_parts();
 
+                let response = HttpResponse::Forbidden()
+                    .finish()
+                    // constructed responses map to "right" body
+                    .map_into_right_body();
+
+                return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
+            }
         }
         
         let res = self.service.call(request);
@@ -154,6 +167,27 @@ where
             // forwarded responses map to "left" body
             res.await.map(ServiceResponse::map_into_left_body)
         })
+    }
+}
+
+fn header_to_ipv4addr_option(header: Option<&HeaderValue>) -> Option<Ipv4Addr> {
+    match header {
+        Some(header) => {
+            let header = header.to_str();
+
+            match header {
+                Ok(header) => {
+                    let addr = core::net::Ipv4Addr::from_str(header);
+
+                    match addr {
+                        Ok(addr) => Some(addr),
+                        Err(_) => None
+                    }
+                },
+                Err(_) => None
+            }
+        },
+        None => None
     }
 }
 
