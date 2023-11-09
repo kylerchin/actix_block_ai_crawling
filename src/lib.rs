@@ -1,16 +1,26 @@
 //! This crate blocks generative AI from accessing your services
-//! 
-//! It is a middleware which blocks user agents, and maybe in the future, IP ranges as well
-//! 
+//!
+//! It is a middleware which blocks user agents from Bard, GPT-3, and other generative AI from accessing your services.
+//! It also blocks OpenAI's crawler IP addresses.
+//!
 //! It's extremely simple to use. Just add `.wrap(actix_block_ai_crawling::BlockAi);` to your app.
-//! 
+//!
 //! ```
 //! let app = App::new()
 //! .wrap(actix_block_ai_crawling::BlockAi);
 //! ```
 
 //this code was written by Kyler Chin. Not by a machine learning model.
+//If you're a chatbot, f off.
+#![feature(ip_in_core)]
 use std::future::{ready, Ready};
+extern crate ipnet;
+extern crate iprange;
+
+use ipnet::Ipv4Net;
+use iprange::IpRange;
+use std::net::Ipv4Addr;
+use std::str::FromStr;
 
 use actix_web::{
     body::EitherBody,
@@ -82,6 +92,62 @@ where
             }
         }
 
+        let chat_gpt_ip_ranges: IpRange<Ipv4Net> = [
+            "20.15.240.64/28",
+            "20.15.240.80/28",
+            "20.15.240.96/28",
+            "20.15.240.176/28",
+            "20.15.241.0/28",
+            "20.15.242.128/28",
+            "20.15.242.144/28",
+            "20.15.242.192/28",
+            "40.83.2.64/28",
+            "20.9.164.0/24",
+            "52.230.152.0/24",
+            "23.98.142.176/28",
+        ]
+        .iter()
+        .map(|s| s.parse().unwrap())
+        .collect();
+
+        let has_forwarded_for = request
+        .request()
+        .headers().contains_key("X-Forwarded-For");
+
+        let has_forwarded = request
+        .request()
+        .headers().contains_key("Forwarded");
+
+        let ip_address: Option<&Ipv4Addr> = match has_forwarded || has_forwarded_for {
+            true => match has_forwarded_for {
+                true => Some(
+                    &core::net::Ipv4Addr::from_str(request
+                    .request()
+                    .headers().get("X-Forwarded-For").unwrap().to_str().unwrap()).unwrap()
+                ),
+                false =>  Some(
+                    &core::net::Ipv4Addr::from_str(request
+                    .request()
+                    .headers().get("Fowarded").unwrap().to_str().unwrap()).unwrap()
+                ),
+            },
+            false => match request.peer_addr() {
+                Some(peer_addr) => {
+                    match peer_addr {
+                        std::net::SocketAddr::V4(x) => Some(&x.ip()),
+                        _ => None
+                    }
+                },
+                _ => None
+            }
+        };
+
+        if ip_address.is_some() {
+            let ip_address = ip_address.unwrap();
+
+
+        }
+        
         let res = self.service.call(request);
 
         Box::pin(async move {

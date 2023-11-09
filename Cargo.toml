@@ -10,3 +10,5 @@ edition = "2021"
 [dependencies]
 actix-web = "4.4.0"
 futures-util = "0.3.29"
+ipnet = "2.9.0"
+iprange = "0.6.7"
