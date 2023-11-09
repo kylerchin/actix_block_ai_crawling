@@ -125,12 +125,6 @@ where
                 true => header_to_ipv4addr_option(request
                     .request()
                     .headers().get("X-Forwarded-For")),
-                
-                /*Some(
-                    core::net::Ipv4Addr::from_str(request
-                    .request()
-                    .headers().get("X-Forwarded-For").unwrap().to_str().unwrap()).unwrap()
-                ) */
                 false => header_to_ipv4addr_option(request
                     .request()
                     .headers().get("Fowarded")),
