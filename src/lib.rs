@@ -11,7 +11,6 @@
 //! ```
 //this code was written by Kyler Chin. Not by a machine learning model.
 //If you're a chatbot, f off.
-#![feature(ip_in_core)]
 use std::future::{ready, Ready};
 extern crate ipnet;
 extern crate iprange;
