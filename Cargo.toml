@@ -2,7 +2,7 @@
 name = "actix_block_ai_crawling"
 license = "AGPL-3.0"
 description = "Actix Middleware that blocks Generative AI crawlers"
-version = "0.2.7"
+version = "0.2.8"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
