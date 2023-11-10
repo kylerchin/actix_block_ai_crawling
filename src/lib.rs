@@ -170,7 +170,7 @@ fn header_to_ipv4addr_option(header: Option<&HeaderValue>) -> Option<Ipv4Addr> {
 
             match header {
                 Ok(header) => {
-                    let addr = core::net::Ipv4Addr::from_str(header);
+                    let addr = std::net::Ipv4Addr::from_str(header);
 
                     match addr {
                         Ok(addr) => Some(addr),
