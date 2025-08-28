@@ -23,7 +23,7 @@ use std::str::FromStr;
 use actix_web::{
     body::EitherBody,
     dev::{self, Service, ServiceRequest, ServiceResponse, Transform},
-    http, Error, HttpResponse
+    http, Error, HttpResponse,
 };
 
 use actix_web::http::header::HeaderValue;
@@ -65,7 +65,21 @@ where
     dev::forward_ready!(service);
 
     fn call(&self, request: ServiceRequest) -> Self::Future {
-        let blocked_user_agents = ["ChatGPT-User", "GPTBot", "CCBot", "Google-Extended"];
+        let blocked_user_agents = [
+            "ChatGPT-User",
+            "GPTBot",
+            "CCBot",
+            "Google-Extended",
+            "PerplexityBot",
+            "Perplexity-User",
+            "perplexity.ai",
+            "OAI-SearchBot",
+            "ClaudeBot",
+            "Claude-User",
+            "Claude-SearchBot",
+            "MistralAI",
+            "omgili"
+        ];
 
         let user_agent: Option<&str> = match request
             .request()
@@ -105,37 +119,33 @@ where
             "20.9.164.0/24",
             "52.230.152.0/24",
             "23.98.142.176/28",
+            //perplexity
+            "44.208.221.197/32",
+            "34.193.163.52/32",
+            "18.97.21.0/30",
         ]
         .iter()
         .map(|s| s.parse().unwrap())
         .collect();
 
-        let has_forwarded_for = request
-        .request()
-        .headers().contains_key("X-Forwarded-For");
+        let has_forwarded_for = request.request().headers().contains_key("X-Forwarded-For");
 
-        let has_forwarded = request
-        .request()
-        .headers().contains_key("Forwarded");
+        let has_forwarded = request.request().headers().contains_key("Forwarded");
 
         let ip_address: Option<Ipv4Addr> = match has_forwarded || has_forwarded_for {
             true => match has_forwarded_for {
-                true => header_to_ipv4addr_option(request
-                    .request()
-                    .headers().get("X-Forwarded-For")),
-                false => header_to_ipv4addr_option(request
-                    .request()
-                    .headers().get("Fowarded")),
+                true => {
+                    header_to_ipv4addr_option(request.request().headers().get("X-Forwarded-For"))
+                }
+                false => header_to_ipv4addr_option(request.request().headers().get("Fowarded")),
             },
             false => match request.peer_addr() {
-                Some(peer_addr) => {
-                    match peer_addr {
-                        std::net::SocketAddr::V4(x) => Some(*x.ip()),
-                        _ => None
-                    }
+                Some(peer_addr) => match peer_addr {
+                    std::net::SocketAddr::V4(x) => Some(*x.ip()),
+                    _ => None,
                 },
-                _ => None
-            }
+                _ => None,
+            },
         };
 
         if ip_address.is_some() {
@@ -152,7 +162,7 @@ where
                 return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
             }
         }
-        
+
         let res = self.service.call(request);
 
         Box::pin(async move {
@@ -173,13 +183,13 @@ fn header_to_ipv4addr_option(header: Option<&HeaderValue>) -> Option<Ipv4Addr> {
 
                     match addr {
                         Ok(addr) => Some(addr),
-                        Err(_) => None
+                        Err(_) => None,
                     }
-                },
-                Err(_) => None
+                }
+                Err(_) => None,
             }
-        },
-        None => None
+        }
+        None => None,
     }
 }
 
