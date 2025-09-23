@@ -78,7 +78,7 @@ where
             "Claude-User",
             "Claude-SearchBot",
             "MistralAI",
-            "omgili"
+            "omgili",
         ];
 
         let user_agent: Option<&str> = match request
@@ -88,12 +88,9 @@ where
         {
             Some(ua) => Some(ua.to_str().unwrap()),
             None => None,
-        }
-        .clone();
+        };
 
-        if user_agent.is_some() {
-            let user_agent = user_agent.unwrap();
-
+        if let Some(user_agent) = user_agent {
             if blocked_user_agents.contains(&user_agent) {
                 let (request, _pl) = request.into_parts();
 
