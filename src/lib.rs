@@ -116,10 +116,20 @@ where
             "20.9.164.0/24",
             "52.230.152.0/24",
             "23.98.142.176/28",
-            //perplexity
+            //perplexity bot
+            "107.20.236.150/32",
+            "3.224.62.45/32",
+            "18.210.92.235/32",
+            "3.222.232.239/32",
+            "3.211.124.183/32",
+            "3.231.139.107/32",
+            "18.97.1.228/30",
+            "18.97.9.96/29",
+            //perplexity user
             "44.208.221.197/32",
             "34.193.163.52/32",
             "18.97.21.0/30",
+            "18.97.9.96/29",
         ]
         .iter()
         .map(|s| s.parse().unwrap())
@@ -134,7 +144,7 @@ where
                 true => {
                     header_to_ipv4addr_option(request.request().headers().get("X-Forwarded-For"))
                 }
-                false => header_to_ipv4addr_option(request.request().headers().get("Fowarded")),
+                false => header_to_ipv4addr_option(request.request().headers().get("Forwarded")),
             },
             false => match request.peer_addr() {
                 Some(peer_addr) => match peer_addr {
